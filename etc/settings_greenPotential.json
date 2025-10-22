@@ -1,6 +1,6 @@
 {
     "maps": {
-        "wind_velocity":"/projects/urbanair/DATA/DATA_AntwerpWindStudy/Average_maps/Wind_mean_merge_175.tiff", // to be updated
+        "wind_velocity":"/projects/urbanair/DATA/DATA_AntwerpWindStudy/Average_maps/Wind_mean_merge_175.tiff", 
         "wind_comfort": "/projects/urbanair/DATA/DATA_AntwerpWindStudy/Average_maps/Wind_comfort_merge_175.tiff",
         "wbgt": "/projects/urbanair/DATA/urbClim/wbgt_max_24072012.tif",
         "air_quality": "/projects/urbanair/DATA/DATA_AntwerpWindStudy/Average_maps/AQ_merge_0_175.tiff",
