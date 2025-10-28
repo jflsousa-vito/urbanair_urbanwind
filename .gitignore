@@ -1,0 +1,10 @@
+# data folders
+data/cases/
+data/maps/
+data/geometry/
+data/meteo_input/
+
+log.*
+
+
+conda/urbanAir
