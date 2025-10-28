@@ -9,6 +9,8 @@ from matplotlib.colorbar import ColorbarBase
 import matplotlib.pyplot as plt
 import geopandas as gpd
 from rasterio.mask import mask
+from matplotlib import animation
+from IPython.display import HTML
 
 def plot_green_potential(cf,static):
 
@@ -243,6 +245,32 @@ def plot_urban_wind(tif_path, vmin=0, vmax=1, mask_shp=None, static=True):
         m.add_control(legend_control)
     
         display(m)
+
+def wind_animation(wind_local,vmin=0,vmax=4):
+    
+    times = sorted(wind_local.keys())
+    
+    fig, ax = plt.subplots(figsize=(8,8))
+    im = ax.imshow(wind_local[times[0]], cmap='jet', animated=True, vmin=0, vmax=4)
+    
+    title = ax.set_title(f"Wind field at {times[0]}")
+    ax.axis("off")
+    
+    # Update function for animation
+    def update(frame):
+        data = wind_local[times[frame]]
+        im.set_array(data)
+        title.set_text(f"Wind field at {times[frame]}")
+        return [im, title]
+    
+    # Build the animation
+    ani = animation.FuncAnimation(
+        fig, update, frames=len(times), interval=700, blit=True
+    )
+
+    return ani
+    
+    # Show in Jupyter
     
 
     

@@ -82,7 +82,7 @@ def get_wind_extreme_dt(LOCATION,date='-14'):
             "type": "timeseries",
             "points": [[LOCATION[0], LOCATION[1]]],
             "axes": "step",
-            "range": {"start": 0, "end": 10}
+            "range": {"start": 0, "end": 24}
         },
     }
 
@@ -114,26 +114,20 @@ def get_wind_extreme_dt(LOCATION,date='-14'):
     
 def read_cfd_wind(path_cfd,angles, cfd_height, crop_bounds):
 
-    print(crop_bounds)
+
 
     print('Reading CFD wind files from ', path_cfd) 
     cfd_ratio=dict()
     for ag in angles:
-        print("Reafing CFD for angle:" +str(ag))
-        tif_file=f'{path_cfd}/Wind_ratio_merge_{ag}_{cfd_height}.tiff'
+        tif_file=f'{path_cfd}/Wind_ratio_merge_{ag}_{cfd_height}_fix.tiff'
 
         
         with rasterio.open(tif_file) as src:
             
             profile = src.profile          # full metadata (useful if you’ll write a new GeoTIFF)
-            transform_flipped = Affine(src.transform.a, src.transform.b, src.transform.c,
-                           src.transform.d, -src.transform.e, src.transform.f)
             
-            #profile.update(transform=transform_flipped)
 
-            
-            
-            window = from_bounds(*crop_bounds, transform=transform_flipped)
+            window = from_bounds(*crop_bounds, transform=src.transform)
             band1 = src.read(1, window=window)   # only cropped area loaded
             
             profile.update({
@@ -141,7 +135,7 @@ def read_cfd_wind(path_cfd,angles, cfd_height, crop_bounds):
                 "width": band1.shape[1],
                 "transform": src.window_transform(window)
             })
-            print(profile)
+
             
             crs = src.crs                  # coordinate reference system
             transform = src.window_transform(window)
@@ -156,13 +150,10 @@ def read_cfd_wind(path_cfd,angles, cfd_height, crop_bounds):
             ys = np.asarray(ys)
             dtype = band1.dtype          # data type of the raster values
 
-        print(xs)
-        print(ys)
-        print(ys)
-        print(band1)
+
+        
         cfd_ratio[ag]=band1
 
-    print(cfd_ratio)
     
     cfd_ratio['x']=xs
     cfd_ratio['y']=ys
