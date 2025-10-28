@@ -158,6 +158,7 @@ def read_cfd_wind(path_cfd,angles, cfd_height, crop_bounds):
 
         print(xs)
         print(ys)
+        print(ys)
         print(band1)
         cfd_ratio[ag]=band1
 
