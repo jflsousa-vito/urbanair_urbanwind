@@ -151,15 +151,9 @@ def read_cfd_wind(path_cfd,angles, cfd_height, crop_bounds):
             ys = np.asarray(ys)
             dtype = band1.dtype          # data type of the raster values
 
-        print(xs)
-        print(ys)
-        print(band1)
-        print(height, width)
         
         cfd_ratio[ag]=band1
 
-    print(cfd_ratio)
-    
     cfd_ratio['x']=xs
     cfd_ratio['y']=ys
     cfd_ratio['profile']=profile
