@@ -23,8 +23,8 @@ if fix_geotiff:
 
     for ag in angles:
         for cfd_height in [175]:
-            tiff_test=f'/projects/urbanair/DATA/DATA_AntwerpWindStudy/wind_ratios/Wind_ratio_merge_{ag}_{cfd_height}.tiff'
-            tiff_test_out=f'/projects/urbanair/DATA/DATA_AntwerpWindStudy/wind_ratios/Wind_ratio_merge_{ag}_{cfd_height}_fix.tiff'
+            tiff_test=f'DATA_AntwerpWindStudy/wind_ratios/Wind_ratio_merge_{ag}_{cfd_height}.tiff'
+            tiff_test_out=f'DATA_AntwerpWindStudy/wind_ratios/Wind_ratio_merge_{ag}_{cfd_height}_fix.tiff'
             fix_geotiff_transform(input_path=tiff_test, output_path=tiff_test_out)
 
 
