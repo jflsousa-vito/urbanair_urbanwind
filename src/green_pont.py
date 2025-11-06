@@ -12,6 +12,7 @@ from shapely.geometry import Polygon
 from rasterio.warp import reproject
 from rasterio.enums import Resampling
 from rasterio.mask import mask as mask_raster
+import os
 
 
 
@@ -90,17 +91,20 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
     air_quality=cf['maps']['air_quality']
     wbgt=cf['maps']['wbgt']
     
-   
+   if not os.path.isfdir(cf['green_potential']['output_folder']): 
+       os.makedirs(cf['green_potential']['output_folder'])
     
     # Resaaample tiff files:
     
     
     ref_map=air_quality
     wind_comfort_resampled=cf['green_potential']['output_folder']+"wind_comfort_resampled.tif"
-    #resample_to_match(src_path=wind_comfort, ref_path=ref_map, out_path=wind_comfort_resampled, resampling = "nearest")
+    if not os.path.isfile(wind_comfort_resampled): 
+        resample_to_match(src_path=wind_comfort, ref_path=ref_map, out_path=wind_comfort_resampled, resampling = "nearest")
     
     wbgt_resampled=cf['green_potential']['output_folder']+"wbgt_max_resampled.tif"
-    #resample_to_match(src_path=wbgt, ref_path=ref_map, out_path=wbgt_resampled, resampling = "nearest")
+    if not os.path.isfile(wbgt_resampled): 
+    resample_to_match(src_path=wbgt, ref_path=ref_map, out_path=wbgt_resampled, resampling = "nearest")
     
     
     
@@ -475,6 +479,7 @@ def load_json_with_comments(path):
 
 def read_tiff_with_coords(file):
     with rasterio.open(file) as src:
+        print("Rwading file: "+ file)
         data = src.read(1)  # Read first band
         transform = src.transform  # Affine transform
         meta = src.meta
