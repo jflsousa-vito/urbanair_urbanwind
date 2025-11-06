@@ -14,6 +14,8 @@ from rasterio.windows import from_bounds
 from affine import Affine
 import os
 from src.green_pont import reproject_tiff
+from scipy.spatial import cKDTree
+from scipy.interpolate import interp1d
 
 
 
@@ -111,7 +113,88 @@ def get_wind_extreme_dt(LOCATION,date='-14'):
     df = pd.DataFrame({'wind_speed': wind_speed_30, 'wind_dir': wind_dir}, index=time_stamp)
             
     return df
+
+
+def get_wind_extreme_dt_ondemand(LOCATION,date="2023-08-20"):
+    import earthkit.plots
+    from polytope.api import Client
+    polytope_address="polytope.lumi.apps.dte.destination-earth.eu"   
+    # Define the request, note that we only extract levtop -> 90 levels to reduce the data amount
+    levtop = 80
+    request= {
+        "class": "d1",
+        "dataset": "on-demand-extremes-dt",
+        "expver": "aab0",
+        "stream": "oper",
+        "date": date,
+        "time": "0000",
+        "type": "fc",
+        "georef": "u09tvk",
+        "levtype": "ml",
+        "step":  [x for x in range(1,24)],
+        "levelist": f"{levtop}/to/90",
+        "expect" : 0,
+        # z,t,u,v,q,w
+        "param": ["129", "130", "131", "132", "133", "260238"],
+    }
+
+    data = earthkit.data.from_source("polytope", "destination-earth", request, address=polytope_address, stream=False)
     
+    atm = data.sel({"typeOfLevel": "hybrid"}).to_xarray()
+
+    target_lat = LOCATION[0]# 51.1954 # Antwerp
+    target_lon = LOCATION[1] # 4.3615  
+    
+    lat2d= atm['latitude'].values
+    lon2d= atm['longitude'].values
+    
+    # Build KDTree once (re-use it for many lookups)
+    pts = np.column_stack([lat2d.ravel(), lon2d.ravel()])
+    tree = cKDTree(pts)
+    
+    # Query nearest grid cell
+    _, flat_idx = tree.query([target_lat, target_lon])
+    iy, ix = np.unravel_index(flat_idx, lat2d.shape)
+    
+    g=9.81
+    
+    target_height=30
+
+    date_time= pd.to_datetime(date)
+
+    u_=list()
+    v_=list()
+    timestamp=list()
+    
+    for s in range(0,3):
+        time= date_time + pd.Timedelta(hours=s)
+        
+        ds_point = atm.isel(y=iy, x=ix, step=s) # filter by coord and step
+        height_levels=ds_point.z.data /g
+
+        
+        f = interp1d(height_levels, ds_point.u.values)
+        u30= f(30)
+        
+        f = interp1d(height_levels, ds_point.v.values)
+        v30= f(30)
+    
+        u_.append(u30)
+        v_.append(v30)
+        timestamp.append(time)
+        
+    u_=np.array(u_)
+    v_=np.array(v_)
+    
+    wind_speed_30 = np.sqrt(u_**2 + v_**2)
+    wind_dir = (np.degrees(np.arctan2(u_, v_)) + 180 ) % 360
+    df = pd.DataFrame({'wind_speed': wind_speed_30, 'wind_dir': wind_dir}, index=timestamp)
+
+    return df 
+
+    
+
+
 def read_cfd_wind(path_cfd,angles, cfd_height, crop_bounds):
 
     print('Reading CFD wind files from ', path_cfd) 
@@ -176,22 +259,34 @@ def read_cfd_nox(path_cfd,angles, cfd_height, crop_bounds):
         with rasterio.open(tif_file) as src:
             
             profile = src.profile          # full metadata (useful if you’ll write a new GeoTIFF)
-            
 
-            window = from_bounds(*crop_bounds, transform=src.transform)
-            band1 = src.read(1, window=window)   # only cropped area loaded
-            
-            profile.update({
-                "height": band1.shape[0],
-                "width": band1.shape[1],
-                "transform": src.window_transform(window)
-            })
+            if crop_bounds==[]:
 
+                band1 = src.read(1)
+                transform =src.transform
+                crs = src.crs
+            else:
+
+
+                window = from_bounds(*crop_bounds, transform=src.transform)
+                band1 = src.read(1, window=window)   # only cropped area loaded
+                
+                profile.update({
+                    "height": band1.shape[0],
+                    "width": band1.shape[1],
+                    "transform": src.window_transform(window)
+                })
+    
+                
+                crs = src.crs                  # coordinate reference system
+                transform = src.window_transform(window)
+                nodata = src.nodata
+                bounds = rasterio.windows.bounds(window, transform)
+                
             
-            crs = src.crs                  # coordinate reference system
-            transform = src.window_transform(window)
-            nodata = src.nodata
-            bounds = rasterio.windows.bounds(window, transform)
+                
+                
+            
             res = src.res                  # (pixel_width, pixel_height)
             rows, cols = np.indices(band1.shape)
             height, width = band1.shape
