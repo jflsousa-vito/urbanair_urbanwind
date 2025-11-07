@@ -16,18 +16,19 @@ yc=211343
 L=100
 crop_bounds = (xc-L, yc-L, xc+L, yc+L)
 
-fix_geotiff=False
+fix_geotiff=True
 
 if fix_geotiff:
     angles=[0,30,60,90,120,150,180,210,240,270,300,330]
 
     for ag in angles:
         for cfd_height in [175]:
-            tiff_test=f'DATA_AntwerpWindStudy/wind_ratios/Wind_ratio_merge_{ag}_{cfd_height}.tiff'
-            tiff_test_out=f'DATA_AntwerpWindStudy/wind_ratios/Wind_ratio_merge_{ag}_{cfd_height}_fix.tiff'
+            tiff_test=f'/projects/urbanair/DATA/DATA_AntwerpWindStudy/wind_ratios/Wind_ratio_merge_{ag}_{cfd_height}.tiff'
+            tiff_test_out=f'/projects/urbanair/DATA/DATA_AntwerpWindStudy/wind_ratios/Wind_ratio_merge_{ag}_{cfd_height}_fix.tiff'
             fix_geotiff_transform(input_path=tiff_test, output_path=tiff_test_out)
 
 
+"""
 
 # read pre-computed normalized CFD wind ratios
 path_cfd=cf['path_cfd'] 
@@ -43,4 +44,4 @@ crop_bounds = (xc-L, yc-L, xc+L, yc+L)
 
 cfd_ratio=read_cfd_wind(path_cfd,angles, height,crop_bounds)
 
-
+"""
