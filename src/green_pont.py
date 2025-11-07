@@ -91,7 +91,7 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
     air_quality=cf['maps']['air_quality']
     wbgt=cf['maps']['wbgt']
     
-   if not os.path.isfdir(cf['green_potential']['output_folder']): 
+    if not os.path.isfdir(cf['green_potential']['output_folder']): 
        os.makedirs(cf['green_potential']['output_folder'])
     
     # Resaaample tiff files:
@@ -104,7 +104,7 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
     
     wbgt_resampled=cf['green_potential']['output_folder']+"wbgt_max_resampled.tif"
     if not os.path.isfile(wbgt_resampled): 
-    resample_to_match(src_path=wbgt, ref_path=ref_map, out_path=wbgt_resampled, resampling = "nearest")
+        resample_to_match(src_path=wbgt, ref_path=ref_map, out_path=wbgt_resampled, resampling = "nearest")
     
     
     

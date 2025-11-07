@@ -166,7 +166,7 @@ def get_wind_extreme_dt_ondemand(LOCATION,date="2023-08-20"):
     v_=list()
     timestamp=list()
     
-    for s in range(0,3):
+    for s in range(0,23):
         time= date_time + pd.Timedelta(hours=s)
         
         ds_point = atm.isel(y=iy, x=ix, step=s) # filter by coord and step
@@ -202,11 +202,16 @@ def read_cfd_wind(path_cfd,angles, cfd_height, crop_bounds):
     for ag in angles:
         tif_file=f'{path_cfd}/Wind_ratio_merge_{ag}_{cfd_height}_fix.tiff'
 
+      
+
+        if ag==150:  # there is some problem with angle 150... to be investigated
+            print('avoinding 150 deg')
+            tif_file=f'{path_cfd}/Wind_ratio_merge_{120}_{cfd_height}_fix.tiff'
         
         with rasterio.open(tif_file) as src:
             
             profile = src.profile          # full metadata (useful if you’ll write a new GeoTIFF)
-            
+
 
             window = from_bounds(*crop_bounds, transform=src.transform)
             band1 = src.read(1, window=window)   # only cropped area loaded
@@ -232,69 +237,6 @@ def read_cfd_wind(path_cfd,angles, cfd_height, crop_bounds):
             dtype = band1.dtype          # data type of the raster values
 
 
-        
-        cfd_ratio[ag]=band1
-
-    
-    cfd_ratio['x']=xs
-    cfd_ratio['y']=ys
-    cfd_ratio['profile']=profile
-    cfd_ratio['transform']=transform
-    cfd_ratio['crs']=crs
-    cfd_ratio['height']=height
-    cfd_ratio['width']=width
-    cfd_ratio['dtype']=dtype
-
-    return cfd_ratio
-
-
-def read_cfd_nox(path_cfd,angles, cfd_height, crop_bounds):
-
-    print('Reading CFD NOx files from ', path_cfd) 
-    cfd_ratio=dict()
-    for ag in angles:
-        tif_file=f'{path_cfd}/NOX_floor_175m_{ag}.tiff'
-
-        
-        with rasterio.open(tif_file) as src:
-            
-            profile = src.profile          # full metadata (useful if you’ll write a new GeoTIFF)
-
-            if crop_bounds==[]:
-
-                band1 = src.read(1)
-                transform =src.transform
-                crs = src.crs
-            else:
-
-
-                window = from_bounds(*crop_bounds, transform=src.transform)
-                band1 = src.read(1, window=window)   # only cropped area loaded
-                
-                profile.update({
-                    "height": band1.shape[0],
-                    "width": band1.shape[1],
-                    "transform": src.window_transform(window)
-                })
-    
-                
-                crs = src.crs                  # coordinate reference system
-                transform = src.window_transform(window)
-                nodata = src.nodata
-                bounds = rasterio.windows.bounds(window, transform)
-                
-            
-                
-                
-            
-            res = src.res                  # (pixel_width, pixel_height)
-            rows, cols = np.indices(band1.shape)
-            height, width = band1.shape
-            
-            xs, ys = xy(src.transform, rows, cols, offset="center")  # 2D lists/arrays of coords
-            xs = np.asarray(xs)
-            ys = np.asarray(ys)
-            dtype = band1.dtype          # data type of the raster values
 
 
         
@@ -311,7 +253,7 @@ def read_cfd_nox(path_cfd,angles, cfd_height, crop_bounds):
     cfd_ratio['dtype']=dtype
 
     return cfd_ratio
-            
+
 
             
 
@@ -343,41 +285,7 @@ def scale_cfd_wind(wind_meteo, cfd_ratio):
 
 
 
-def scale_cfd_nox(wind_meteo, cfd_ratio):
-    print('Scaling  NOx to local urban scale using CFD ratios')
-    ref_height_cfd=1.75
-    ref_height_meteo=30
-    z0=0.1
 
-        
-    U_30tp175=(np.log(ref_height_cfd/z0)/np.log(ref_height_meteo/z0))
-
-    nox_local=dict()
-
-    time_factor = 1
-    bck= 0
-    
-    ii=0
-    for index, row in wind_meteo.iterrows():
-        wind_s=row['wind_speed']
-        wind_d=row['wind_dir']
-        time_stamp=index.strftime('%Y%m%d_%H%M')
-        print(time_stamp)
-        angle = int(np.round(wind_d/ 30) * 30) % 360
-        
-        #U_175=wind_s*U_30tp175
-        
-        
-        # coversion to NO2
-        
-        nox_local[ii]=cfd_ratio[angle] *3.8/wind_s * time_factor + bck
-        
-        ii=ii+1
-
-        #scaled_wind = U_ratio * ratio
-
-    return nox_local
-    
 def save_local_wind(wind_local, cfd_ratio, path, reproject=True, mask_frames=None):
     print('Saving local wind maps to ', path)
     saved_files=[]
@@ -410,36 +318,6 @@ def save_local_wind(wind_local, cfd_ratio, path, reproject=True, mask_frames=Non
     return saved_files
 
     
-def save_local_aq(wind_local, cfd_ratio, path, reproject=True, mask_frames=None):
-    print('Saving local wind maps to ', path)
-    saved_files=[]
-    
-    for time_stamp, U_local in wind_local.items():
-        output_file=f"{path}/NOx_175_{time_stamp}.tif"
-        with rasterio.open(
-            output_file,
-            'w',
-            driver='GTiff',
-            height=cfd_ratio['height'],
-            width=cfd_ratio['width'],
-            count=1,
-            dtype=cfd_ratio['dtype'],
-            crs=cfd_ratio['crs'],
-            transform=cfd_ratio['transform'],
-        ) as dst:
-            dst.write(U_local, 1)    
-            #dst.write_mask(mask.astype(np.uint8) * 255)
-        saved_files.append(output_file)
-
-        
-        
-        if reproject:
-            
-            
-            
-            reproject_tiff(output_file, output_file.split('.')[0] + '_4326.tif', dst_crs ="EPSG:4326", mask_frames=mask_frames)
-
-    return saved_files
 
 def plot_maps(saved_files, path):
     

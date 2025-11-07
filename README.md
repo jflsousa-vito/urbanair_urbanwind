@@ -22,12 +22,12 @@ Still working on it
 
 # If you want to run more interactive notebooks you need to make a new conda env:
 
-# Need to install env in local path in this case "conda/" otherise conda env appears to be gone after each log out
+#3 Need to install env in local path in this case "conda/" otherise conda env appears to be gone after each log out
 conda env create --prefix conda/ --file=urbanair_urbanwind/conda/environment.yml
 
-# source bashrc might be required each time -> not sure why
+## source bashrc might be required each time -> not sure why
 
-# register conda env as a jupyter kernel
+## register conda env as a jupyter kernel
 /home/jovyan/conda/urbanair/bin/python -m ipykernel install --user \
   --name urbanair \
   --display-name "Python (urbanair)"
