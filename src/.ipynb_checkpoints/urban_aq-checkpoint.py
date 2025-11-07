@@ -149,15 +149,20 @@ def scale_cfd_nox(wind_meteo, cfd_ratio):
 
     nox_local=dict()
 
-    time_factor = 1
+    time_factor = pd.read_csv('time_factors_hourly_mean.csv').set_index('hour')
+    print(time_factor)
     bck= 0
     
     ii=0
     for index, row in wind_meteo.iterrows():
         wind_s=row['wind_speed']
         wind_d=row['wind_dir']
-        time_stamp=index.strftime('%Y%m%d_%H%M')
-        print(time_stamp)
+        time_stamp=pd.to_datetime(index.strftime('%Y%m%d_%H%M'),format='%Y%m%d_%H%M')
+        
+
+        tf=time_factor.iloc[int(time_stamp.hour)].values
+
+        
         angle = int(np.round(wind_d/ 30) * 30) % 360
         
         #U_175=wind_s*U_30tp175
@@ -165,7 +170,7 @@ def scale_cfd_nox(wind_meteo, cfd_ratio):
         
         # coversion to NO2
         
-        nox_local[time_stamp]=cfd_ratio[angle] *3.8/wind_s * time_factor + bck
+        nox_local[time_stamp]=cfd_ratio[angle] *3.8/wind_s * tf + bck
         
         ii=ii+1
 
