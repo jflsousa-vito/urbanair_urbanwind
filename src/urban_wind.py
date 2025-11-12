@@ -6,6 +6,8 @@ from scipy import stats
 
 # import pygrib
 import warnings
+import json
+import s3fs
 
 # import seaborn as sns
 # sns.set_theme()
@@ -147,7 +149,7 @@ def get_wind_extreme_dt(LOCATION, date="-14"):
     return df
 
 def get_wind_extreme_dt_ondemand(LOCATION,date="2023-08-20"):
-    import earthkit.plots
+    import earthkit.data
     from polytope.api import Client
     polytope_address="polytope.lumi.apps.dte.destination-earth.eu"   
     # Define the request, note that we only extract levtop -> 90 levels to reduce the data amount
@@ -221,14 +223,37 @@ def get_wind_extreme_dt_ondemand(LOCATION,date="2023-08-20"):
     wind_dir = (np.degrees(np.arctan2(u_, v_)) + 180 ) % 360
     df = pd.DataFrame({'wind_speed': wind_speed_30, 'wind_dir': wind_dir}, index=timestamp)
 
-    return df 
+    return df
+
+def read_s3_cfd_wind(path_cfd, ag, cfd_height):
+    """Read the cfd_wind file from the S3 storage"""
+    with open(os.path.expanduser("~/access_keys.json"), 'r') as fh:
+        s3_keys = json.load(fh)
+        
+    # append "https://" to beginning of url - the load_json_with_comments function above removes the // and causes the url to be misformed
+    parts = path_cfd.split("/")
+    url = "https://" + parts[0]
+    
+    bucket = f"wind-ratio-merge-{ag}-{cfd_height}"
+    object = f"Wind_ratio_merge_{ag}_{cfd_height}_fix.tiff"
+
+    fs = s3fs.S3FileSystem(
+        endpoint_url=url,
+        key=s3_keys["accessKey"],
+        secret=s3_keys["secretKey"]
+    )
+    fo = fs.open(bucket + "/" + object)
+    return fo
 
 def read_cfd_wind(path_cfd, angles, cfd_height, crop_bounds):
 
     print("Reading CFD wind files from ", path_cfd)
     cfd_ratio = dict()
     for ag in angles:
-        tif_file = f"{path_cfd}/Wind_ratio_merge_{ag}_{cfd_height}_fix.tiff"
+        if "s3" in path_cfd:
+            tif_file = read_s3_cfd_wind(path_cfd, ag, cfd_height)
+        else:
+            tif_file = f"{path_cfd}/Wind_ratio_merge_{ag}_{cfd_height}_fix.tiff"
 
         with rasterio.open(tif_file) as src:
 

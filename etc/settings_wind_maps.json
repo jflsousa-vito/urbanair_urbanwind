@@ -3,7 +3,7 @@
     "path_meteo" : "data/meteo_input/",
     "grib_file" : "GRIBPFDEOD+$hour$h00m00s",
 
-    "path_cfd" : "DATA_AntwerpWindStudy/wind_ratios",
+    "path_cfd" : "s3.central.data.destination-earth.eu/",
 
     "output_path" : "data/maps/urban_wind/",
 
