@@ -1,3 +1,5 @@
 data
 DATA_AntwerpWindStudy
-
+.ipynb_checkpoints/
+src/.ipynb_checkpoints/
+etc/.ipynb_checkpoints/
