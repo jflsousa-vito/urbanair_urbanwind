@@ -3,6 +3,7 @@ from rasterio.transform import Affine
 import rasterio
 import numpy as np
 
+
 def fix_geotiff_transform(input_path: str, output_path: str):
     with rasterio.Env(GDAL_NUM_THREADS="ALL_CPUs"):
         with rasterio.open(input_path) as src:
@@ -31,5 +32,4 @@ def fix_geotiff_transform(input_path: str, output_path: str):
                 dst.update_tags(**src.tags())
                 for i in range(1, src.count + 1):
                     dst.update_tags(i, **src.tags(i))
-                print( f"Fixed GeoTIFF saved to {output_path}")
-
+                print(f"Fixed GeoTIFF saved to {output_path}")
