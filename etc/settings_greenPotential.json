@@ -1,11 +1,10 @@
 {
     "maps": {
-        "wind_velocity":"DATA_AntwerpWindStudy/Average_maps/Wind_mean_merge_175.tiff", 
-        "wind_comfort": "DATA_AntwerpWindStudy/Average_maps/Wind_comfort_merge_175.tiff",
+        "wind_velocity": "s3.central.data.destination-earth.eu/average-maps/Wind_mean_merge_175.tiff", 
+        "wind_comfort": "s3.central.data.destination-earth.eu/average-maps/Wind_comfort_merge_175.tiff",
         "wbgt": "DATA_AntwerpWindStudy/heat_maps/wbgt_max_24072012.tif",
-        "air_quality": "DATA_AntwerpWindStudy/Average_maps/AQ_merge_0_175.tiff",
-        "buildings": "DATA_AntwerpWindStudy/geometry/bld_v10.geojson"
-    
+        "air_quality": "s3.central.data.destination-earth.eu/average-maps/AQ_merge_0_175.tiff",
+        "buildings": "s3.central.data.destination-earth.eu/geometry/bld_v10.geojson"
     },
 
     "geometry":
@@ -33,6 +32,8 @@
         "output_map":"data/maps/green_potential.tif",
         "threshold_hedges_no2": 35.5,
         "threshold_green_walls_wbgt": 27
-    }
+    },
+
+    "s3_access_file" : "/home/jovyan/access_keys.json"
 
 }
