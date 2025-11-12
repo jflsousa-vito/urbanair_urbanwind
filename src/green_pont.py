@@ -12,6 +12,7 @@ from shapely.geometry import Polygon
 from rasterio.warp import reproject
 from rasterio.enums import Resampling
 from rasterio.mask import mask as mask_raster
+import os
 
 
 def antwerp_green_map(cf):
@@ -62,28 +63,35 @@ def antwerp_green_map(cf):
 
 def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
     """
-    Create green potential map based on air quality, wind comfort and heat stress maps
-    method 1: simple thresholding
-    method 2: health risk increase calculation based on literature
-    method 3: scoring system based on thresholds
-
-    """
-
-    wind_comfort = cf["maps"]["wind_comfort"]
-    air_quality = cf["maps"]["air_quality"]
-    wbgt = cf["maps"]["wbgt"]
-
+        Create green potential map based on air quality, wind comfort and heat stress maps
+        method 1: simple thresholding
+        method 2: health risk increase calculation based on literature
+        method 3: scoring system based on thresholds
+        
+    """ 
+    
+    wind_comfort=cf['maps']['wind_comfort']
+    air_quality=cf['maps']['air_quality']
+    wbgt=cf['maps']['wbgt']
+    
+    if not os.path.isfdir(cf['green_potential']['output_folder']): 
+       os.makedirs(cf['green_potential']['output_folder'])
+    
     # Resaaample tiff files:
-
-    ref_map = air_quality
-    wind_comfort_resampled = (
-        cf["green_potential"]["output_folder"] + "wind_comfort_resampled.tif"
-    )
-    # resample_to_match(src_path=wind_comfort, ref_path=ref_map, out_path=wind_comfort_resampled, resampling = "nearest")
-    wbgt_resampled = cf["green_potential"]["output_folder"] + "wbgt_max_resampled.tif"
-    # resample_to_match(src_path=wbgt, ref_path=ref_map, out_path=wbgt_resampled, resampling = "nearest")
-    maps = [air_quality, wind_comfort_resampled, wbgt_resampled]
-
+    
+    
+    ref_map=air_quality
+    wind_comfort_resampled=cf['green_potential']['output_folder']+"wind_comfort_resampled.tif"
+    if not os.path.isfile(wind_comfort_resampled): 
+        resample_to_match(src_path=wind_comfort, ref_path=ref_map, out_path=wind_comfort_resampled, resampling = "nearest")
+    
+    wbgt_resampled=cf['green_potential']['output_folder']+"wbgt_max_resampled.tif"
+    if not os.path.isfile(wbgt_resampled): 
+        resample_to_match(src_path=wbgt, ref_path=ref_map, out_path=wbgt_resampled, resampling = "nearest")
+    
+    
+    
+    maps=[air_quality,wind_comfort_resampled,wbgt_resampled]
     names = ["aq", "comfort", "wbgt"]
     criteria = [35, 1, 25]
 

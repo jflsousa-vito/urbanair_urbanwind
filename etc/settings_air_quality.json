@@ -3,7 +3,7 @@
     "path_meteo" : "data/meteo_input/",
     "grib_file" : "GRIBPFDEOD+$hour$h00m00s",
 
-    "path_cfd" : "/projects/urbanair/DATA/DATA_AntwerpWindStudy/nox_maps/zone5/",
+    "path_cfd" : "DATA_AntwerpWindStudy/nox_maps/zone5/",
 
     "output_path" : "data/maps/urban_nox/",
 
