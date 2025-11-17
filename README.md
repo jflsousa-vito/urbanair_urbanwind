@@ -14,6 +14,9 @@ The user can chnage to request meteo data from:
     ECMWF -> For current meteo forecast
     On demand dt -> For selected period tailored for UrbanAIR 
 
+To use the "On demand dt", the Polytope API key for the `jovyan` user must be created.
+This can be done by running the program in `/home/jovyan/polytope-lab/desp-authentication.py`
+This requires your DestinationEarth username and password.
 
 # create air quality map:
 Still working on it

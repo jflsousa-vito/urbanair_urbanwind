@@ -74,7 +74,7 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
     air_quality=cf['maps']['air_quality']
     wbgt=cf['maps']['wbgt']
     
-    if not os.path.isfdir(cf['green_potential']['output_folder']): 
+    if not os.path.isdir(cf['green_potential']['output_folder']): 
        os.makedirs(cf['green_potential']['output_folder'])
     
     # Resaaample tiff files:
@@ -83,11 +83,11 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
     ref_map=air_quality
     wind_comfort_resampled=cf['green_potential']['output_folder']+"wind_comfort_resampled.tif"
     if not os.path.isfile(wind_comfort_resampled): 
-        resample_to_match(src_path=wind_comfort, ref_path=ref_map, out_path=wind_comfort_resampled, resampling = "nearest")
+        resample_to_match(cf, src_path=wind_comfort, ref_path=ref_map, out_path=wind_comfort_resampled, resampling = "nearest")
     
     wbgt_resampled=cf['green_potential']['output_folder']+"wbgt_max_resampled.tif"
     if not os.path.isfile(wbgt_resampled): 
-        resample_to_match(src_path=wbgt, ref_path=ref_map, out_path=wbgt_resampled, resampling = "nearest")
+        resample_to_match(cf, src_path=wbgt, ref_path=ref_map, out_path=wbgt_resampled, resampling = "nearest")
     
     
     
@@ -154,7 +154,7 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
         # health risk map
         output_path = cf["green_potential"]["output_folder"] + "health_risk.tif"
         result = data_all["health_risk"]
-        print("SAve file at:" + output_path)
+        print("Save file at:" + output_path)
         with rasterio.open(output_path, "w", **meta) as dst:
             dst.write(result.astype(rasterio.float32), 1)
 
@@ -336,6 +336,7 @@ def create_special_green_map(cf):
         cf["green_potential"]["output_folder"] + "wind_comfort_resampled.tif"
     )
     resample_to_match(
+        cf,
         src_path=wind_comfort,
         ref_path=ref_map,
         out_path=wind_comfort_resampled,
@@ -344,7 +345,7 @@ def create_special_green_map(cf):
 
     wbgt_resampled = cf["green_potential"]["output_folder"] + "wbgt_max_resampled.tif"
     resample_to_match(
-        src_path=wbgt, ref_path=ref_map, out_path=wbgt_resampled, resampling="nearest"
+        cf, src_path=wbgt, ref_path=ref_map, out_path=wbgt_resampled, resampling="nearest"
     )
 
     RASTER_PATHs = [
@@ -506,6 +507,7 @@ def open_s3_file(file, cf):
     url = "https://" + parts[0]
     bucket = parts[1]
     object = parts[2]
+    print(url, bucket, object)
     fs = s3fs.S3FileSystem(
         endpoint_url=url,
         key=s3_keys["accessKey"],
@@ -535,6 +537,7 @@ def read_tiff_with_coords(file, cf):
 
 
 def resample_to_match(
+    cf: dict,
     src_path: str,
     ref_path: str,
     out_path: str | None = None,
@@ -566,13 +569,23 @@ def resample_to_match(
         raise ValueError(f"Unsupported resampling method: {resampling}")
 
     # 1) Read reference grid specs
-    with rasterio.open(ref_path) as ref:
+    if "s3" in ref_path:
+        ref_ref = open_s3_file(ref_path, cf)
+    else:
+        ref_ref = ref_path
+        
+    with rasterio.open(ref_ref) as ref:
         dst_crs = ref.crs
         dst_transform = ref.transform
         dst_height, dst_width = ref.height, ref.width
 
     # 2) Open source and prepare destination
-    with rasterio.open(src_path) as src:
+    if "s3" in src_path:
+        src_ref = open_s3_file(src_path, cf)
+    else:
+        src_ref = src_path
+        
+    with rasterio.open(src_ref) as src:
         count = src.count
         src_crs = src.crs
         src_transform = src.transform
@@ -616,7 +629,8 @@ def resample_to_match(
                 "nodata": dst_nodata,
                 "count": count,
                 "compress": "deflate",
-                "predictor": 2 if np.issubdtype(np.dtype(dtype), np.floating) else 1,
+                # "predictor": 2 if np.issubdtype(np.dtype(dtype), np.floating) else 1,
+                "predictor": 1,
                 "tiled": True,
                 "blockxsize": 256,
                 "blockysize": 256,

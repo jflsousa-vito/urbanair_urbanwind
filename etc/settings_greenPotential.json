@@ -2,7 +2,7 @@
     "maps": {
         "wind_velocity": "s3.central.data.destination-earth.eu/average-maps/Wind_mean_merge_175.tiff", 
         "wind_comfort": "s3.central.data.destination-earth.eu/average-maps/Wind_comfort_merge_175.tiff",
-        "wbgt": "DATA_AntwerpWindStudy/heat_maps/wbgt_max_24072012.tif",
+        "wbgt": "s3.central.data.destination-earth.eu/heat-maps/wbgt_max_24072012.tif",
         "air_quality": "s3.central.data.destination-earth.eu/average-maps/AQ_merge_0_175.tiff",
         "buildings": "s3.central.data.destination-earth.eu/geometry/bld_v10.geojson"
     },
@@ -33,7 +33,5 @@
         "threshold_hedges_no2": 35.5,
         "threshold_green_walls_wbgt": 27
     },
-
     "s3_access_file" : "/home/jovyan/access_keys.json"
-
 }

@@ -247,7 +247,7 @@ def read_s3_cfd_wind(path_cfd, ag, cfd_height):
 
 def read_cfd_wind(path_cfd, angles, cfd_height, crop_bounds):
 
-    print("Reading CFD wind files from ", path_cfd)
+    print(f"Reading CFD wind files from {path_cfd}")
     cfd_ratio = dict()
     for ag in angles:
         if "s3" in path_cfd:
