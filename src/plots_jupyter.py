@@ -10,15 +10,16 @@ import geopandas as gpd
 from rasterio.mask import mask
 from matplotlib import animation
 from IPython.display import HTML
-
+from src.green_pont import open_raster_file
 
 def plot_green_potential(cf, static):
 
     tif_path = cf["green_potential"]["output_folder"] + "recomendation_method3_4326.tif"
     # --- Read band + bounds ---
-    with rasterio.open(tif_path) as src:
-        bounds = src.bounds
-        band = src.read(1)
+    src = open_raster_file(tif_path)
+    bounds = src.bounds
+    band = src.read(1)
+    src.close()
 
     # --- Define categories (string bins) ---
     # The raster values must match these numeric keys

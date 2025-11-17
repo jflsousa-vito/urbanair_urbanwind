@@ -9,27 +9,27 @@
 
     "geometry":
     {
-        "buildings": "data/geometry/bld_all_fused.shp",
+        "buildings": "s3.central.data.destination-earth.eu/buildings/bld_all_fused.zip",
         "greenspaces": "",
-        "waterbodies": "data/geometry/Wtz11002.geojson"
+        "waterbodies": "s3.central.data.destination-earth.eu/geometry/Wtz11002.geojson"
     },
 
     "green_potential":
     {
-        "output_folder":"data/maps/",
+        "output_folder":"s3.central.data.destination-earth.eu/maps/",
         "aq_thresholds": [10,100],
         "wbgt_thresholds": [25,30],
         "wind_comfort_thresholds": [1,2,3,4],
-        "output_map":"data/maps/green_potential.tif"
+        "output_map":"s3.central.data.destination-earth.eu/maps/green_potential.tif"
     },
 
     "green_potential_all":
     {
-        "output_folder":"data/maps/",
+        "output_folder":"s3.central.data.destination-earth.eu/maps/",
         "wbgt_thresholds": {"0":25 , "1":26, "2":26.75, "3":26.75},
         "air_quality_thresholds": {"0":25.5 , "1":35.5,"2":40,"3":50.5},
         "wind_comfort_thresholds": {"0":1 , "1":2, "2":3, "3":4},
-        "output_map":"data/maps/green_potential.tif",
+        "output_map":"s3.central.data.destination-earth.eu/maps/green_potential.tif",
         "threshold_hedges_no2": 35.5,
         "threshold_green_walls_wbgt": 27
     },

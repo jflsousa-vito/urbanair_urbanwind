@@ -14,7 +14,6 @@ from rasterio.enums import Resampling
 from rasterio.mask import mask as mask_raster
 import os
 
-
 def antwerp_green_map(cf):
     """
     How it was calculated in antwerp project
@@ -47,7 +46,6 @@ def antwerp_green_map(cf):
         data_all[names[i]], xs, ys, meta = read_tiff_with_coords(tiff_path, cf)
         i = i + 1
 
-    print(data_all)
     data_all["recomendation"] = data_all["aq"] * 0
     data_all["recomendation"][(data_all["aq"] > criteria[0])] = 1  # Not recomended
     data_all["recomendation"][
@@ -56,10 +54,7 @@ def antwerp_green_map(cf):
 
     result = data_all["recomendation"]
     output_path = cf["green_potential"]["output_folder"] + "recomendations_test.tif"
-    print("SAve file at:" + output_path)
-    with rasterio.open(output_path, "w", **meta) as dst:
-        dst.write(result.astype(rasterio.float32), 1)
-
+    save_raster_file(output_path, result, meta, indexes=1)
 
 def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
     """
@@ -73,23 +68,20 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
     wind_comfort=cf['maps']['wind_comfort']
     air_quality=cf['maps']['air_quality']
     wbgt=cf['maps']['wbgt']
-    
-    if not os.path.isdir(cf['green_potential']['output_folder']): 
-       os.makedirs(cf['green_potential']['output_folder'])
+
+    out_folder = cf['green_potential']['output_folder']
+    if not "s3." in out_folder and not os.path.isdir(out_folder): 
+       os.makedirs(out_folders)
     
     # Resaaample tiff files:
-    
-    
     ref_map=air_quality
     wind_comfort_resampled=cf['green_potential']['output_folder']+"wind_comfort_resampled.tif"
-    if not os.path.isfile(wind_comfort_resampled): 
+    if not file_exists(wind_comfort_resampled):
         resample_to_match(cf, src_path=wind_comfort, ref_path=ref_map, out_path=wind_comfort_resampled, resampling = "nearest")
     
     wbgt_resampled=cf['green_potential']['output_folder']+"wbgt_max_resampled.tif"
-    if not os.path.isfile(wbgt_resampled): 
+    if not file_exists(wbgt_resampled): 
         resample_to_match(cf, src_path=wbgt, ref_path=ref_map, out_path=wbgt_resampled, resampling = "nearest")
-    
-    
     
     maps=[air_quality,wind_comfort_resampled,wbgt_resampled]
     names = ["aq", "comfort", "wbgt"]
@@ -104,7 +96,7 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
     data_all = {}
     i = 0
     for tiff_path in maps:
-        data_all[names[i]], xs, ys, meta = read_tiff_with_coords(tiff_path, cf)
+        data_all[names[i]], xs, ys, meta = read_tiff_with_coords(tiff_path)
         i = i + 1
 
     if method == 1:
@@ -127,9 +119,7 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
         # health risk map
         output_path = cf["green_potential"]["output_folder"] + "recomendation.tif"
         result = data_all["recomendation"]
-        print("Save file at:" + output_path)
-        with rasterio.open(output_path, "w", **meta) as dst:
-            dst.write(result.astype(rasterio.float32), 1)
+        save_raster_file(output_path, result, meta, indexes=1)
 
     elif method == 2:
         b = 1 / ((thresholds["aq"][1] / (thresholds["aq"][0]) + 1))
@@ -154,10 +144,8 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
         # health risk map
         output_path = cf["green_potential"]["output_folder"] + "health_risk.tif"
         result = data_all["health_risk"]
-        print("Save file at:" + output_path)
-        with rasterio.open(output_path, "w", **meta) as dst:
-            dst.write(result.astype(rasterio.float32), 1)
-
+        save_raster_file(output_path, result, meta, indexes=1)
+        
         data_all["health_dominates"] = data_all["aq"] * 0
         data_all["health_dominates"][
             (data_all["health_risk_aq"] < data_all["health_risk_heat"])
@@ -169,9 +157,7 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
 
         output_path = cf["green_potential"]["output_folder"] + "risk_domination.tif"
         result = data_all["health_dominates"]
-        print("SAve file at:" + output_path)
-        with rasterio.open(output_path, "w", **meta) as dst:
-            dst.write(result.astype(rasterio.float32), 1)
+        save_raster_file(output_path, result, meta, indexes=1)
 
     elif method == 3:
         aq_thres = cf["green_potential_all"]["air_quality_thresholds"]
@@ -188,7 +174,6 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
         data_all["aq_val"][(data_all["aq"] >= aq_thres["2"])] = 0
 
         comfort_thres = cf["green_potential_all"]["wind_comfort_thresholds"]
-        print(comfort_thres)
         data_all["comfort"] = data_all["comfort"] * comfort_weight
         data_all["comfort_val"] = data_all["aq"] * 0
         data_all["comfort_val"][(data_all["comfort"] <= comfort_thres["0"])] = 0
@@ -232,14 +217,13 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
             cf["green_potential"]["output_folder"] + "recomendation_method3.tif"
         )
         result = data_all["recomendation"]
-        print("SAve file at:" + output_path)
-        with rasterio.open(output_path, "w", **meta) as dst:
-            dst.write(result.astype(rasterio.float32), 1)
+        save_raster_file(output_path, result, meta, indexes=1)
 
         mask_files = [cf["geometry"]["buildings"], cf["geometry"]["waterbodies"]]
+        print("!!!"+output_path)
         reproject_tiff(
             output_path,
-            output_path.split(".")[0] + "_4326.tif",
+            output_path[:-1*len(".tif")] + "_4326.tif",
             dst_crs="EPSG:4326",
             mask=True,
             mask_frames=mask_files,
@@ -253,68 +237,67 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
                 + ".tif"
             )
             result = data_all[tt + "_val"]
-            print("SAve file at:" + output_path)
-            with rasterio.open(output_path, "w", **meta) as dst:
-                dst.write(result.astype(rasterio.float32), 1)
-
+            save_raster_file(output_path, result, meta, indexes=1)
 
 def reproject_tiff(src_tif, dst_tif, dst_crs="4326", mask=True, mask_frames=None):
     # Open source GeoTIFF
-    with rasterio.open(src_tif) as src:
-        # Define target CRS
-        # Compute transform and new dimensions
-        transform, width, height = calculate_default_transform(
-            src.crs, dst_crs, src.width, src.height, *src.bounds
-        )
+    src = open_raster_file(src_tif, "rb")
+    # Define target CRS
+    # Compute transform and new dimensions
+    transform, width, height = calculate_default_transform(
+        src.crs, dst_crs, src.width, src.height, *src.bounds
+    )
 
-        # Create output metadata
-        kwargs = src.meta.copy()
-        kwargs.update(
-            {"crs": dst_crs, "transform": transform, "width": width, "height": height}
-        )
+    # Create output metadata
+    kwargs = src.meta.copy()
+    kwargs.update(
+        {"crs": dst_crs, "transform": transform, "width": width, "height": height}
+    )
 
-        # Reproject
-        with rasterio.open(dst_tif, "w", **kwargs) as dst:
-            for i in range(1, src.count + 1):
-                reproject(
-                    source=rasterio.band(src, i),
-                    destination=rasterio.band(dst, i),
-                    src_transform=src.transform,
-                    src_crs=src.crs,
-                    dst_transform=transform,
-                    dst_crs=dst_crs,
-                    resampling=Resampling.nearest,  # or bilinear/cubic
-                )
+    # Reproject
+    dst = open_raster_file(dst_tif, "wb", kwargs)
+    for i in range(1, src.count + 1):
+        reproject(
+            source=rasterio.band(src, i),
+            destination=rasterio.band(dst, i),
+            src_transform=src.transform,
+            src_crs=src.crs,
+            dst_transform=transform,
+            dst_crs=dst_crs,
+            resampling=Resampling.nearest,  # or bilinear/cubic
+        )
+    dst.close()
+    src.close()
 
     if mask:
         # Step 4: Apply the mask to the GeoTIFF
         for mask_files in mask_frames:
-            mask_frame = gpd.read_file(mask_files)
+            mask_frame = read_shape_file(mask_files)
             mask_frame.to_crs(epsg=4326, inplace=True)  # ensure
 
-            with rasterio.open(dst_tif) as src:
-                geometries = mask_frame.geometry.values
-                out_image, out_transform = mask_raster(
-                    src, geometries, crop=True, invert=True, nodata=np.nan
-                )
+            src = open_raster_file(dst_tif, "rb")
+            geometries = mask_frame.geometry.values
+            out_image, out_transform = mask_raster(
+                src, geometries, crop=True, invert=True, nodata=np.nan
+            )
 
-                out_meta = src.meta.copy()
-                out_meta.update(
-                    {
-                        "driver": "GTiff",
-                        "height": out_image.shape[1],
-                        "width": out_image.shape[2],
-                        "transform": out_transform,
-                        "crs": src.crs,
-                    }
-                )
+            out_meta = src.meta.copy()
+            out_meta.update(
+                {
+                    "driver": "GTiff",
+                    "height": out_image.shape[1],
+                    "width": out_image.shape[2],
+                    "transform": out_transform,
+                    "crs": src.crs,
+                }
+            )
+            src.close()
 
-            # Step 5: Save the masked GeoTIFF
-            with rasterio.open(dst_tif, "w", **out_meta) as dest:
-                dest.write(out_image)
+        # Step 5: Save the masked GeoTIFF
+        print("Saving GeoTIFF to " + dst_tif)
+        save_raster_file(dst_tif, out_image, out_meta)
 
     print("✅ Reprojected GeoTIFF saved at:", dst_tif)
-
 
 def create_special_green_map(cf):
     """
@@ -361,7 +344,7 @@ def create_special_green_map(cf):
     USER_SPACING = 2.0  # desired spacing between points along lines (in raster CRS units); if None or <=0, will use ~half pixel size
     BAND = 1
     # Read polygons
-    gdf = gpd.read_file(cf["geometry"]["buildings"])
+    gdf = read_shape_file(cf["geometry"]["buildings"])
 
     # Extract boundary as LineString/MultiLineString
     gdf = gdf.explode(index_parts=True).reset_index()
@@ -498,28 +481,81 @@ def load_json_with_comments(path):
         content = re.sub(r"/\*[\s\S]*?\*/", "", content)  # block comments
         return json.loads(content)
 
-def open_s3_file(file, cf):
-    access_file = cf["s3_access_file"]
+def file_exists(file):
+    if "s3." in file:
+        access_file = "/home/jovyan/access_keys.json"
+        with open(access_file, 'r') as fh:
+            s3_keys = json.load(fh)
+        print("Attempting to find S3 file: "+file)
+        parts = file.split("/")
+        url = "https://" + parts[0]
+        bucket = parts[1]
+        objct = parts[2]
+        fs = s3fs.S3FileSystem(
+            endpoint_url=url,
+            key=s3_keys["accessKey"],
+            secret=s3_keys["secretKey"]
+        )
+        bl = fs.ls(bucket)
+        return (bucket + "/" + objct) in bl
+    else:
+        return os.path.isfile(file)
+
+def read_shape_file(path):
+    if "s3." in path:
+        fo = open_s3_file(path, "rb")
+        gdf = gpd.read_file(fo)
+    else:
+        gdf = gpd.read_file(path)
+    return gdf
+
+def open_s3_file(file, mode='rb'):
+    access_file = "/home/jovyan/access_keys.json"
     with open(access_file, 'r') as fh:
         s3_keys = json.load(fh)
+    print("Attempting to open S3 file: " + file + " in mode: " + mode)
     # append "https://" to beginning of url - the load_json_with_comments function above removes the // and causes the url to be misformed
     parts = file.split("/")
     url = "https://" + parts[0]
     bucket = parts[1]
     object = parts[2]
-    print(url, bucket, object)
     fs = s3fs.S3FileSystem(
         endpoint_url=url,
         key=s3_keys["accessKey"],
         secret=s3_keys["secretKey"]
     )
-    fo = fs.open(bucket + "/" + object)
+    fo = fs.open(bucket + "/" + object, mode)
     return fo
 
-def read_tiff_with_coords(file, cf):
-    if "s3" in file:
+def save_raster_file(output_path, result, meta={}, indexes=None):
+    if "s3." in output_path:
         # open with S3
-        fo = open_s3_file(file, cf)
+        fo = open_s3_file(output_path, mode="wb")
+        with rasterio.open(fo, "w", **meta) as dst:
+            dst.write(result.astype(rasterio.float32), indexes=indexes)
+        fo.close()
+    else:
+        with rasterio.open(output_path, "w", **meta) as dst:
+            dst.write(result.astype(rasterio.float32), indexes=indexes)
+
+def open_raster_file(input_path, mode="rb", kwargs={}):
+    if "b" in mode:
+        rio_mode = mode.strip("b")
+    else:
+        rio_mode = mode
+
+    if "s3." in input_path:
+        # open with S3
+        fo = open_s3_file(input_path, mode)
+        src = rasterio.open(fo, rio_mode, **kwargs)
+    else:
+        src = rasterio.open(input_path, rio_mode, **kwargs)
+    return src
+
+def read_tiff_with_coords(file):
+    if "s3." in file:
+        # open with S3
+        fo = open_s3_file(file)
         src = rasterio.open(fo)
     else:
         src = rasterio.open(file)
@@ -569,8 +605,8 @@ def resample_to_match(
         raise ValueError(f"Unsupported resampling method: {resampling}")
 
     # 1) Read reference grid specs
-    if "s3" in ref_path:
-        ref_ref = open_s3_file(ref_path, cf)
+    if "s3." in ref_path:
+        ref_ref = open_s3_file(ref_path)
     else:
         ref_ref = ref_path
         
@@ -580,8 +616,8 @@ def resample_to_match(
         dst_height, dst_width = ref.height, ref.width
 
     # 2) Open source and prepare destination
-    if "s3" in src_path:
-        src_ref = open_s3_file(src_path, cf)
+    if "s3." in src_path:
+        src_ref = open_s3_file(src_path)
     else:
         src_ref = src_path
         
@@ -639,8 +675,7 @@ def resample_to_match(
 
     # 5) Either write to disk or return arrays
     if out_path:
-        with rasterio.open(out_path, "w", **profile) as dst_ds:
-            dst_ds.write(dst)
+        save_raster_file(out_path, dst, profile)
         return out_path, profile
     else:
         return dst, profile

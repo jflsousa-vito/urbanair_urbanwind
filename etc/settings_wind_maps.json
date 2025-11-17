@@ -5,7 +5,7 @@
 
     "path_cfd" : "s3.central.data.destination-earth.eu/",
 
-    "output_path" : "data/maps/urban_wind/",
+    "output_path" : "s3.central.data.destination-earth.eu/maps/urban_wind/",
 
     "angles": [0,30,60,90,120,150,180,210,240,270,300,330],
 
@@ -14,9 +14,9 @@
     
     "geometry":
     {
-        "buildings": "data/geometry/bld_all_fused.shp",
+        "buildings": "s3.central.data.destination-earth.eu/buildings/bld_all_fused.shp",
         "greenspaces": "",
-        "waterbodies": "data/geometry/Wtz11002.geojson"
+        "waterbodies": "s3.central.data.destination-earth.eu/geometry/Wtz11002.geojson"
     }
 
 
