@@ -3,9 +3,9 @@
     "path_meteo" : "data/meteo_input/",
     "grib_file" : "GRIBPFDEOD+$hour$h00m00s",
 
-    "path_cfd" : "DATA_AntwerpWindStudy/nox_maps/zone5/",
+    "path_cfd" : "s3.central.data.destination-earth.eu/nox-floor-175m-",
 
-    "output_path" : "data/maps/urban_nox/",
+    "output_path" : "s3.central.data.destination-earth.eu/urban-nox",
 
     "angles": [0,30,60,90,120,150,180,210,240,270,300,330],
 
@@ -14,9 +14,9 @@
     
     "geometry":
     {
-        "buildings": "data/geometry/bld_all_fused.shp",
+        "buildings": "s3.central.data.destination-earth.eu/buildings/bld_all_fused.zip",
         "greenspaces": "",
-        "waterbodies": "data/geometry/Wtz11002.geojson"
+        "waterbodies": "s3.central.data.destination-earth.eu/geometry/Wtz11002.geojson"
     }
 
 

@@ -17,7 +17,7 @@ from rasterio.transform import xy
 from rasterio.windows import from_bounds
 from affine import Affine
 import os
-from src.green_pont import reproject_tiff
+from src.green_pont import reproject_tiff, save_raster_file
 from scipy.spatial import cKDTree
 from scipy.interpolate import interp1d
 
@@ -417,62 +417,25 @@ def save_local_wind(wind_local, cfd_ratio, path, reproject=True, mask_frames=Non
     saved_files = []
 
     for time_stamp, U_local in wind_local.items():
-        output_file = path + "/wind_175_" + time_stamp.strftime("%Y%m%d_%H%M") + ".tif"
-        with rasterio.open(
-            output_file,
-            "w",
-            driver="GTiff",
-            height=cfd_ratio["height"],
-            width=cfd_ratio["width"],
-            count=1,
-            dtype=cfd_ratio["dtype"],
-            crs=cfd_ratio["crs"],
-            transform=cfd_ratio["transform"],
-        ) as dst:
-            dst.write(U_local, 1)
-            # dst.write_mask(mask.astype(np.uint8) * 255)
+        output_file = path + "wind_175_" + time_stamp.strftime("%Y%m%d_%H%M") + ".tif"
+        meta = {
+            "driver": "GTiff",
+            "height": cfd_ratio["height"],
+            "width": cfd_ratio["width"],
+            "count": 1,
+            "dtype": cfd_ratio["dtype"],
+            "crs": cfd_ratio["crs"],
+            "transform": cfd_ratio["transform"]
+        }
+        save_raster_file(output_file, U_local, meta, indexes=1)
         saved_files.append(output_file)
 
         if reproject:
-
             reproject_tiff(
                 output_file,
-                output_file.split(".")[0] + "_4326.tif",
+                output_file[:-1*len(".tif")] + "_4326.tif",
                 dst_crs="EPSG:4326",
-                mask_frames=mask_frames,
-            )
-
-    return saved_files
-
-
-def save_local_aq(wind_local, cfd_ratio, path, reproject=True, mask_frames=None):
-    print("Saving local wind maps to ", path)
-    saved_files = []
-
-    for time_stamp, U_local in wind_local.items():
-        output_file = f"{path}/NOx_175_{time_stamp}.tif"
-        with rasterio.open(
-            output_file,
-            "w",
-            driver="GTiff",
-            height=cfd_ratio["height"],
-            width=cfd_ratio["width"],
-            count=1,
-            dtype=cfd_ratio["dtype"],
-            crs=cfd_ratio["crs"],
-            transform=cfd_ratio["transform"],
-        ) as dst:
-            dst.write(U_local, 1)
-            # dst.write_mask(mask.astype(np.uint8) * 255)
-        saved_files.append(output_file)
-
-        if reproject:
-
-            reproject_tiff(
-                output_file,
-                output_file.split(".")[0] + "_4326.tif",
-                dst_crs="EPSG:4326",
-                mask_frames=mask_frames,
+                mask=False,
             )
 
     return saved_files

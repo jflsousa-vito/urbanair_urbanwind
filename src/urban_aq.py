@@ -16,20 +16,16 @@ import os
 from src.green_pont import reproject_tiff
 from scipy.spatial import cKDTree
 from scipy.interpolate import interp1d
-
-
+from src.green_pont import open_raster_file, save_raster_file
 
 warnings.filterwarnings("ignore")
-
-
 
 def read_cfd_nox(path_cfd,angles, cfd_height, crop_bounds):
 
     print('Reading CFD NOx files from ', path_cfd) 
     cfd_ratio=dict()
     for ag in angles:
-        tif_file=f'{path_cfd}/NOX_floor_175m_{ag}.tiff'
-        print(ag)
+        tif_file=f"{path_cfd}{ag}/NOX_floor_175m_{ag}.tiff"
         """
         
         
@@ -76,54 +72,46 @@ def read_cfd_nox(path_cfd,angles, cfd_height, crop_bounds):
 
         
         """
-        with rasterio.open(tif_file) as src:
-            
-            profile = src.profile          # full metadata (useful if you’ll write a new GeoTIFF)
+        src = open_raster_file(tif_file)            
+        profile = src.profile          # full metadata (useful if you’ll write a new GeoTIFF)
 
-            if crop_bounds==[]:
+        if crop_bounds==[]:
 
-                band1 = src.read(1)
-                transform =src.transform
-                crs = src.crs
-            else:
+            band1 = src.read(1)
+            transform =src.transform
+            crs = src.crs
+        else:
 
-                
-                window = from_bounds(*crop_bounds, transform=src.transform)
-                
-                band1 = src.read(1, window=window)   # only cropped area loaded
-                
-                profile.update({
-                    "height": band1.shape[0],
-                    "width": band1.shape[1],
-                    "transform": src.window_transform(window)
-                })
-    
-                
-                crs = src.crs                  # coordinate reference system
-                transform = src.window_transform(window)
-                nodata = src.nodata
-                bounds = rasterio.windows.bounds(window, transform)
-                
             
-                
-                
+            window = from_bounds(*crop_bounds, transform=src.transform)
             
-            res = src.res                  # (pixel_width, pixel_height)
-            rows, cols = np.indices(band1.shape)
-            height, width = band1.shape
+            band1 = src.read(1, window=window)   # only cropped area loaded
             
-            xs, ys = xy(src.transform, rows, cols, offset="center")  # 2D lists/arrays of coords
-            xs = np.asarray(xs)
-            ys = np.asarray(ys)
-            dtype = band1.dtype          # data type of the raster values
-            
+            profile.update({
+                "height": band1.shape[0],
+                "width": band1.shape[1],
+                "transform": src.window_transform(window)
+            })
 
+            
+            crs = src.crs                  # coordinate reference system
+            transform = src.window_transform(window)
+            nodata = src.nodata
+            bounds = rasterio.windows.bounds(window, transform)
+
+        res = src.res                  # (pixel_width, pixel_height)
+        rows, cols = np.indices(band1.shape)
+        height, width = band1.shape
+        
+        xs, ys = xy(src.transform, rows, cols, offset="center")  # 2D lists/arrays of coords
+        xs = np.asarray(xs)
+        ys = np.asarray(ys)
+        dtype = band1.dtype          # data type of the raster values
+        
+        src.close()
         
         cfd_ratio[ag]=band1
-
-
-
-    
+        
     cfd_ratio['x']=xs
     cfd_ratio['y']=ys
     cfd_ratio['profile']=profile
@@ -177,34 +165,33 @@ def scale_cfd_nox(wind_meteo, cfd_ratio):
         #scaled_wind = U_ratio * ratio
 
     return nox_local
-    
-def save_local_aq(wind_local, cfd_ratio, path, reproject=True, mask_frames=None):
+
+
+def save_local_aq(aq_local, cfd_ratio, path, reproject=True, mask_frames=None):
     print('Saving local wind maps to ', path)
     saved_files=[]
     
-    for time_stamp, U_local in wind_local.items():
+    for time_stamp, nox_local in aq_local.items():
         output_file=f"{path}/NOx_175_{time_stamp}.tif"
-        with rasterio.open(
-            output_file,
-            'w',
-            driver='GTiff',
-            height=cfd_ratio['height'],
-            width=cfd_ratio['width'],
-            count=1,
-            dtype=cfd_ratio['dtype'],
-            crs=cfd_ratio['crs'],
-            transform=cfd_ratio['transform'],
-        ) as dst:
-            dst.write(U_local, 1)    
-            #dst.write_mask(mask.astype(np.uint8) * 255)
+        meta = {
+            "driver": "GTiff",
+            "height": cfd_ratio["height"],
+            "width": cfd_ratio["width"],
+            "count": 1,
+            "dtype": cfd_ratio["dtype"],
+            "crs": cfd_ratio["crs"],
+            "transform": cfd_ratio["transform"]
+        }
+        save_raster_file(output_file, nox_local, meta, indexes=1)
+        
         saved_files.append(output_file)
 
-        
-        
         if reproject:
+            reproject_tiff(
+                output_file, 
+                output_file[:-1*len(".tif")] + '_4326.tif', 
+                dst_crs ="EPSG:4326",
+                mask=False,
+            )
             
-            
-            
-            reproject_tiff(output_file, output_file.split('.')[0] + '_4326.tif', dst_crs ="EPSG:4326", mask_frames=mask_frames)
-
     return saved_files

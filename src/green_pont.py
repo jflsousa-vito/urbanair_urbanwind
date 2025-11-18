@@ -220,7 +220,6 @@ def create_green_map(cf, method, aq_weight=1, comfort_weight=1, heat_weight=1):
         save_raster_file(output_path, result, meta, indexes=1)
 
         mask_files = [cf["geometry"]["buildings"], cf["geometry"]["waterbodies"]]
-        print("!!!"+output_path)
         reproject_tiff(
             output_path,
             output_path[:-1*len(".tif")] + "_4326.tif",
